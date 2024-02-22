@@ -1,0 +1,164 @@
+// Readme file
+description of all files:
+chat_client.cpp : Code file for the client code
+chat_server.cpp : Code file for the server code
+
+client : object / executable file for running mytree program
+server : object / executable file for running mytime program
+
+client_config.txt: configuration file for client
+server_config.txt: configuration file for server
+
+How to edit the above mentioned configuration files:
+please dont change the format, you can change the hostname , port number, but if you change the keywords like servhost: and servport: then connection wont happen. Also, please dont remove the colon.
+
+The example format for client_config is :
+servhost: linprog.cs.fsu.edu
+servport: 12792
+ 
+here lets say if you want to change the host from linprog.cs.fsu.edu to abc and portnumber 12792 to 1234, it can be done as below
+servhost: abc
+servport: 1234
+Note that space " " between servhost: and abc is necessary. same goes for servport.
+
+
+The example format for server_config is :
+port: 12792
+ 
+here lets say if you want to change the port from 12792 to 1234, you can do it like:
+port: 1234
+Note that space " " between port: and 1234 is necessary. 
+
+NOTE: I am using c++17
+
+How to run the chat application
+
+GIST : command:
+1. scl enable devtoolset-11 bash (make sure you have this enabled if you are running on linprog)
+2. make 
+3. in one session type ./server server_config.txt and in other session type ./client client_config.txt , Howmany ever number of clients you want, open that many sessions and type ./client client_config.txt. The max limit is 20.
+Lets say we have opened the server and we have three clients 
+
+Here below, we have sample realtime output of exchanging chats login , logout and exit among the different clients:
+
+SERVER OUTPUT:
+chauhan@linprog8.cs.fsu.edu:~>scl enable devtoolset-11 bash
+bash-4.2$ cd cpdp/cpdpproj3
+bash-4.2$ make clean
+rm -f client server
+bash-4.2$ make
+g++ -std=c++17 -o client chat_client.cpp
+g++ -std=c++17 -o server chat_server.cpp -lpthread
+bash-4.2$ ./server server_config.txt
+Server is running on the port:12792
+Hostname for the server is: linprog8.cs.fsu.edu
+One of the clients has exited the application
+One of the clients has exited the application
+One of the clients has exited the application
+^CExiting the chat application!
+bash-4.2$ 
+
+CLIENT 1 OUTPUT:
+chauhan@linprog8.cs.fsu.edu:~>scl enable devtoolset-11 bash
+bash-4.2$ cd cpdp/cpdpproj3
+bash-4.2$ ./client client_config.txt 
+login user1
+chat hey alll
+user3 >> hey man
+user2 >> whatsapp
+chat @user3 wanna go for lunch?
+chat @user2 your charger is with me
+user3 >> i have meeting i cant go for lunch
+user2 >> what will you do today
+chat @user2 had lunch with user3 but he can come
+user2 >> i am leaving bye
+user4 >> hey i am new user
+chat @user4 welcome
+user3 >> welcome user4
+user4 >> when is party?
+chat @user4 today 9 PM
+logout
+exit
+bash-4.2$ 
+
+CLIENT 2 OUTPUT:
+chauhan@linprog8.cs.fsu.edu:~>scl enable devtoolset-11 bash
+bash-4.2$ cd cpdp/cpdpproj3
+bash-4.2$ ./client client_config.txt 
+login user2
+user1 >> hey alll
+chat @user1 whatsapp
+user1 >> your charger is with me
+user3 >> i have meeting i cant go for lunch
+chat @user3 okay go
+chat @user1 what will you do today
+user1 >> had lunch with user3 but he can come
+chat i am leaving bye
+exit  
+You cannot exit if you have not logged out.
+logout
+login user4
+chat hey i am new user
+user1 >> welcome
+user3 >> welcome user4
+chat @user1 when is party?
+user1 >> today 9 PM
+chat @user1 okay
+The User user1 can not be located.
+chat @user4 seems like user1 left , wanna meet at foyer?
+user4 >> seems like user1 left , wanna meet at foyer?
+chat @user3 haha i messaged myself by mistake
+user3 >> ok bye
+logout
+exit
+bash-4.2$ 
+
+CLIENT 3 OUTPUT:
+chauhan@linprog8.cs.fsu.edu:~>scl enable devtoolset-11 bash
+bash-4.2$ cd cpdp/cpdpproj3
+bash-4.2$ ./client client_config.txt 
+exit
+You cannot exit if you have not logged out.
+logout
+Error: you must log in first to logout
+login a
+logout
+login user3
+user1 >> hey alll
+chat @user1 hey man
+user1 >> wanna go for lunch?
+chat i have meeting i cant go for lunch
+user2 >> okay go
+user2 >> i am leaving bye
+user4 >> hey i am new user
+chat welcome user4
+user4 >> haha i messaged myself by mistake
+chat @user4 ok bye
+exit
+You cannot exit if you have not logged out.
+logout
+exit
+bash-4.2$ 
+
+Limitations:
+1. if the same user is logged in in multipple sessions, the message will be sent in both the sessions
+2. if the chat format is wrong like CHAT or chat @    user1 , it wont work, The format has to be chat @username only.
+
+Very Rare errors: 
+Very rarely socket bind error occurs (1% probability), In case when you encounter such situation, change the port number in both server_config and client_config. If you get the error server cannot be connected, change the ip address in client config, also if you are logged in from linprog2, give address for linprog2 only. In config file if you give linprog.cs.fsu.edu, it will identify the hostname that you are logged in automatically by using getaddressinfo. 
+
+// assumption
+The end user will edit the same port number in both the config files. and write a correct hostname in client config. 
+
+//Scope Of this chat application.
+This application supports multi user chat facility.the correct order of flow is
+1. login -> chat -> logout or login -> logout
+2. chat -> logout
+3. logout -> login or logout -> exit
+
+regarding pthread and select()
+I have used pthread in server where my thread identifier is &thread and my function that i have called is navigate_taskrunner , this function spawns differnet thread for different clients,i have passed an argument to this thread function, the argument is client scoket id. All individual clients have a thread running for the task runner , this function handles all chat activities. 
+I have used select in client, In there, The select in client will wait for reading from the server,so , read_fds is being passed as a set of file descriptors to monitor for readability. and then withe the help of (FD_ISSET(sockfd, & read_fds)) , it keeps track of which socket has recieved the input and delivers the message to that particular user.
+
+
+
